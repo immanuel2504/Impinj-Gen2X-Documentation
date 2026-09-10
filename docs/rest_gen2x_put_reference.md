@@ -28,11 +28,6 @@
         "enabled": {
           "type": "boolean",
           "description": "Enable or disable the FastID feature."
-        },
-        "tidSelector": {
-          "type": "string",
-          "description": "Optional TID word selector mask.",
-          "enum": ["TID[0]", "TID[1]", "TID[2]", "TID[3]"]
         }
       },
       "required": ["enabled"]
@@ -125,13 +120,19 @@
 
 ### TagQuieting
 
+Provide exactly one of `basic` or `advanced`.
+
 ```json
 {
   "type": "object",
   "properties": {
     "tagQuieting": {
       "type": "object",
-      "description": "Impinj TagQuieting configuration.",
+      "description": "Impinj TagQuieting configuration. Provide exactly one of basic or advanced.",
+      "oneOf": [
+        { "required": ["basic"] },
+        { "required": ["advanced"] }
+      ],
       "properties": {
         "basic": {
           "type": "object",
@@ -145,14 +146,23 @@
               "minItems": 1,
               "items": {
                 "type": "string",
-                "pattern": "^([0-9A-Fa-f]{24})+$"
+                "pattern": "^[0-9A-Fa-f]+$"
               }
             }
           },
           "required": ["action", "tagIDs"]
+        },
+        "advanced": {
+          "type": "object",
+          "required": ["tagQuietMasks", "target", "stateAwareAction"],
+          "properties": {
+            "preSelect": { "type": "array", "maxItems": 31 },
+            "tagQuietMasks": { "type": "array", "minItems": 1, "maxItems": 3 },
+            "target": { "type": "string", "enum": ["SL", "S0", "S1", "S2", "S3"] },
+            "stateAwareAction": { "type": "string" }
+          }
         }
-      },
-      "required": ["basic"]
+      }
     }
   },
   "required": ["tagQuieting"]
@@ -166,8 +176,7 @@
 ```json
 {
   "fastID": {
-    "enabled": true,
-    "tidSelector": "TID[0]"
+    "enabled": true
   }
 }
 ```
@@ -206,7 +215,7 @@
 }
 ```
 
-### TagQuieting
+### TagQuieting (Basic)
 
 ```json
 {
@@ -216,6 +225,42 @@
       "tagIDs": [
         "e2801191a5030069073b426d"
       ]
+    }
+  }
+}
+```
+
+### TagQuieting (Advanced)
+
+```json
+{
+  "tagQuieting": {
+    "advanced": {
+      "preSelect": [
+        {
+          "target": "SL",
+          "action": "ASSERTSL_NOTHING",
+          "mask": {
+            "bank": "EPC",
+            "pointer": 32,
+            "length": 96,
+            "value": "E280123456789012345678AB"
+          }
+        },
+        {
+          "target": "S2",
+          "action": "INVB_INVA",
+          "mask": {
+            "bank": "EPC",
+            "pointer": 32,
+            "length": 96,
+            "value": "E280AABBCCDDEEFF11223344"
+          }
+        }
+      ],
+      "tagQuietMasks": ["SL_ASSERT", "S2B"],
+      "target": "SL",
+      "stateAwareAction": "ASSERTSL_DEASSERTSL"
     }
   }
 }

@@ -1,8 +1,12 @@
 **Description:**
-Retrieves and displays the current Gen2X configuration stored on the reader, including all enabled features and their settings.
+Retrieves the last saved Gen2X feature from the reader.
 
 **Usage:**
-Send this command with an empty payload to query the reader's current Gen2X configuration state. The response will contain only the latest configured feature (for example, just TagFocus if that was the last action). Use this command to verify the most recent configuration change before starting the reader or to audit the current setting. If no Gen2X configuration has been set, the response returns an empty configuration object.
+Send this command with an empty payload. After any successful PUT, the response contains exactly one feature object (`fastID`, `tagFocus`, `tagProtect`, or `tagQuieting`). A later PUT replaces the stored object; GET is not a merge of all features.
+
+GET returns the saved configuration, not whether it is running. Use `GET /cloud/status` and `impinjGen2X.isActive` for the current inventory session.
+
+If Gen2X has never been configured, REST `GET /cloud/impinjGen2X` returns HTTP 200 with an empty body (not JSON `{}`). MQTT returns an empty `payload` object. After the first successful PUT, GET always returns a JSON object. `PUT /cloud/impinjGen2X` with `{}` is rejected (422).
 
 **Parameters (MQTT & REST):**
 

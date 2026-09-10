@@ -29,7 +29,15 @@
         "Advanced": "Advanced unquieting: state-aware SELECT (preSelect, tagQuietMasks, target, stateAwareAction)"
     },
     "get_gen2x_config": {
-        "Tested example": "Retrieve current Gen2X configuration"
+        "Tested example": "Retrieve last saved Gen2X configuration"
+    },
+    "get_gen2x_config_response": {
+        "FastID enabled": "Last saved FastID with enabled true",
+        "FastID disabled": "Last saved FastID with enabled false",
+        "TagFocus": "Last saved TagFocus",
+        "TagProtect": "Last saved TagProtect",
+        "Tag Quieting basic": "Last saved basic TagQuieting",
+        "Tag Quieting advanced": "Last saved advanced TagQuieting"
     },
     "start": {
         "Tested example": "Start radio with Gen2X features applied"

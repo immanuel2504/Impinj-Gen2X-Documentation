@@ -20,6 +20,169 @@ info:
     - Bearer token (recommended): Execute /cloud/localRestLogin to get a token, then use Authorization: Bearer <token>.
     - Basic authentication: Use administrator credentials.
 
+    # How to Set the Access Password
+
+    The Access Password is stored in words 2-3 of the Gen2 RESERVED bank.
+
+    ## 1. Read the current password
+
+    Read words 0-3 of the RESERVED bank.
+
+    **Request**
+
+    ```http
+    PUT /cloud/mode
+    ```
+
+    **Body**
+
+    ```json
+    {
+      "type": "CUSTOM",
+      "antennas": [1],
+      "transmitPower": 30,
+      "filter": {
+        "value": "e28011b0a5050076c4d7530a",
+        "match": "prefix",
+        "operation": "include"
+      },
+      "accesses": [
+        {
+          "type": "READ",
+          "config": {
+            "membank": "RESERVED",
+            "wordPointer": 0,
+            "wordCount": 4
+          }
+        }
+      ]
+    }
+    ```
+
+    ## 2. Start the reader
+
+    ```http
+    PUT /cloud/start
+    ```
+
+    ```json
+    {}
+    ```
+
+    Wait about 12 seconds.
+
+    Send an empty body. applyImpinjGen2X applies a staged Gen2X configuration and is not used when setting the password.
+
+    ## 3. Stop the reader
+
+    ```http
+    PUT /cloud/stop
+    ```
+
+    Check the tag data stream for accessResults.
+
+    For example:
+
+    ```json
+    {
+      "data": {
+        "idHex": "e28011b0a5050076c4d7530a",
+        "accessResults": [
+          "1234876512348765"
+        ]
+      }
+    }
+    ```
+
+    The last 8 characters are the Access Password:
+
+    ```text
+    12348765
+    ```
+
+    If accessResults is 0000000000000000, no Access Password is set.
+
+    ## 4. Write the Access Password
+
+    For example, to set the password to A1B2C3D4, write it at wordPointer 2.
+
+    **Request**
+
+    ```http
+    PUT /cloud/mode
+    ```
+
+    **Body**
+
+    ```json
+    {
+      "type": "CUSTOM",
+      "antennas": [1],
+      "transmitPower": 30,
+      "filter": {
+        "value": "e28011b0a5050076c4d7530a",
+        "match": "prefix",
+        "operation": "include"
+      },
+      "accesses": [
+        {
+          "type": "WRITE",
+          "config": {
+            "membank": "RESERVED",
+            "wordPointer": 2,
+            "data": "A1B2C3D4"
+          }
+        }
+      ]
+    }
+    ```
+
+    ## 5. Start, wait, and stop
+
+    Start the reader, wait about 12 seconds, and then stop the reader.
+
+    A successful write returns:
+
+    ```json
+    {
+      "data": {
+        "idHex": "e28011b0a5050076c4d7530a",
+        "accessResults": [
+          "SUCCESS"
+        ]
+      }
+    }
+    ```
+
+    ## 6. Verify the password
+
+    Repeat Steps 1-3.
+
+    The result should contain the password you wrote:
+
+    ```json
+    {
+      "data": {
+        "idHex": "e28011b0a5050076c4d7530a",
+        "accessResults": [
+          "00000000A1B2C3D4"
+        ]
+      }
+    }
+    ```
+
+    The last 8 characters must match the password:
+
+    ```text
+    A1B2C3D4
+    ```
+
+    The tag is now ready for Tag Protection operations.
+
+    **Important:** Include the filter when writing the password so that the password is written only to the target tag.
+
+    **Do not use 00000000 as the Access Password.**
+
     # Getting Started
 
     1. Use GET /cloud/impinjGen2X to check the currently saved Gen2X configuration.
@@ -45,7 +208,9 @@ paths:
         - ImpinjGen2X
       summary: Get Impinj Gen2X configuration
       description: |
-        Retrieves the current Impinj Gen2X feature configuration as last saved. Returns an empty object if no Gen2X configuration has been set yet. Only feature objects that were previously configured are included in the response.
+        Retrieves the last saved Impinj Gen2X feature. After any successful PUT, the response contains exactly one of `fastID`, `tagFocus`, `tagProtect`, or `tagQuieting`. A later PUT replaces the stored object. GET is not a merge of all features, and it does not show whether that config is running. Use `GET /cloud/status` and `impinjGen2X.isActive` for the current inventory session.
+
+        If Gen2X has never been configured, HTTP 200 returns an empty body (not JSON `{}`). After the first successful PUT, GET always returns a JSON object. `PUT /cloud/impinjGen2X` with `{}` is rejected (422).
 
         **No request payload required/applicable.**
       operationId: getImpinjGen2X
@@ -56,10 +221,11 @@ paths:
             application/json:
               schema:
                 type: object
+                maxProperties: 1
                 description: >-
-                  Current Impinj Gen2X feature configuration as last saved via set_impinjGen2X.
-                  Returns an empty object if no Gen2X configuration has been set yet.
-                  Only feature objects that were previously configured are included in the response.
+                  Last saved Impinj Gen2X feature. Exactly one feature object is present
+                  after any successful PUT. If Gen2X has never been configured, the 200
+                  body is empty (not JSON `{}`).
                 properties:
                   fastID:
                     type: object
@@ -69,15 +235,6 @@ paths:
                         type: boolean
                         description: Whether FastID is enabled.
                         example: true
-                      tidSelector:
-                        type: string
-                        description: TID word selector mask, if one was configured.
-                        enum:
-                          - 'TID[0]'
-                          - 'TID[1]'
-                          - 'TID[2]'
-                          - 'TID[3]'
-                        example: 'TID[0]'
                     required:
                       - enabled
                   tagProtect:
@@ -105,7 +262,7 @@ paths:
                         description: >-
                           Hexadecimal tagID (EPC) of the target tag.
                           Only present when action is enableTagProtection or disableTagProtection.
-                        pattern: '^([0-9A-Fa-f]{24})+$'
+                        pattern: '^[0-9A-Fa-f]+$'
                         example: 'e2801191a5030069073b426d'
                       enableShortRange:
                         type: boolean
@@ -126,7 +283,12 @@ paths:
                       - enabled
                   tagQuieting:
                     type: object
-                    description: TagQuieting configuration. Present only if tagQuieting was previously configured.
+                    description: >-
+                      TagQuieting configuration. Present only if tagQuieting was previously
+                      configured. Exactly one of basic or advanced is returned.
+                    oneOf:
+                      - required: [basic]
+                      - required: [advanced]
                     properties:
                       basic:
                         type: object
@@ -144,24 +306,114 @@ paths:
                             description: List of tag IDs (EPC strings) that are to be quieted or unquieted.
                             items:
                               type: string
-                              pattern: '^([0-9A-Fa-f]{24})+$'
+                              pattern: '^[0-9A-Fa-f]+$'
                               example: 'e2801191a5030069073b426d'
                         required:
                           - action
                           - tagIDs
+                      advanced:
+                        type: object
+                        description: Advanced TagQuieting using state-aware SELECT.
+                        required:
+                          - tagQuietMasks
+                          - target
+                          - stateAwareAction
+                        properties:
+                          preSelect:
+                            type: array
+                            maxItems: 31
+                            items:
+                              type: object
+                              required: [target, action, mask]
+                              properties:
+                                target:
+                                  type: string
+                                  enum: [S0, S1, S2, S3, SL]
+                                action:
+                                  type: string
+                                  enum:
+                                    - ASSERTSL_DEASSERTSL
+                                    - ASSERTSL_NOTHING
+                                    - NOTHING_DEASSERTSL
+                                    - NEGATESL_NOTHING
+                                    - DEASSERTSL_ASSERTSL
+                                    - DEASSERTSL_NOTHING
+                                    - NOTHING_ASSERTSL
+                                    - NOTHING_NEGATESL
+                                    - INVA_INVB
+                                    - INVA_NOTHING
+                                    - NOTHING_INVB
+                                    - FLIPAB_NOTHING
+                                    - INVB_INVA
+                                    - INVB_NOTHING
+                                    - NOTHING_INVA
+                                    - NOTHING_FLIPAB
+                                mask:
+                                  type: object
+                                  required: [bank, pointer, length, value]
+                                  properties:
+                                    bank:
+                                      type: string
+                                      enum: [EPC, TID, USER, RESERVED]
+                                    pointer:
+                                      type: integer
+                                      minimum: 0
+                                      maximum: 65535
+                                    length:
+                                      type: integer
+                                      minimum: 1
+                                      maximum: 255
+                                    value:
+                                      type: string
+                                      pattern: '^[0-9A-Fa-f]+$'
+                          tagQuietMasks:
+                            type: array
+                            minItems: 1
+                            maxItems: 3
+                            uniqueItems: true
+                            items:
+                              type: string
+                              enum: [S0A, S0B, S2A, S2B, S3A, S3B, SL_ASSERT, SL_DEASSERT]
+                          target:
+                            type: string
+                            enum: [SL, S0, S1, S2, S3]
+                          stateAwareAction:
+                            type: string
+                            enum:
+                              - ASSERTSL_DEASSERTSL
+                              - ASSERTSL_NOTHING
+                              - NOTHING_DEASSERTSL
+                              - NEGATESL_NOTHING
+                              - DEASSERTSL_ASSERTSL
+                              - DEASSERTSL_NOTHING
+                              - NOTHING_ASSERTSL
+                              - NOTHING_NEGATESL
+                              - INVA_INVB
+                              - INVA_NOTHING
+                              - NOTHING_INVB
+                              - FLIPAB_NOTHING
+                              - INVB_INVA
+                              - INVB_NOTHING
+                              - NOTHING_INVA
+                              - NOTHING_FLIPAB
               examples:
-                empty:
-                  value: {}
                 fastID_configured:
+                  summary: Last saved FastID, enabled true
                   value:
                     fastID:
                       enabled: true
-                      tidSelector: 'TID[0]'
+                fastID_disabled:
+                  summary: Last saved FastID, enabled false
+                  value:
+                    fastID:
+                      enabled: false
                 tagFocus_configured:
+                  summary: Last saved TagFocus
                   value:
                     tagFocus:
                       enabled: true
                 tagProtect_configured:
+                  summary: Last saved TagProtect
                   value:
                     tagProtect:
                       action: enableTagProtection
@@ -169,12 +421,38 @@ paths:
                       tagID: 'e2801191a5030069073b426d'
                       enableShortRange: true
                 tagQuieting_configured:
+                  summary: Last saved basic TagQuieting
                   value:
                     tagQuieting:
                       basic:
                         action: quiet
                         tagIDs:
                           - 'e2801191a5030069073b426d'
+                tagQuieting_advanced:
+                  summary: Last saved advanced TagQuieting
+                  value:
+                    tagQuieting:
+                      advanced:
+                        preSelect:
+                          - target: SL
+                            action: ASSERTSL_NOTHING
+                            mask:
+                              bank: EPC
+                              pointer: 32
+                              length: 96
+                              value: E280123456789012345678AB
+                          - target: S2
+                            action: INVB_INVA
+                            mask:
+                              bank: EPC
+                              pointer: 32
+                              length: 96
+                              value: E280AABBCCDDEEFF11223344
+                        tagQuietMasks:
+                          - SL_ASSERT
+                          - S2B
+                        target: SL
+                        stateAwareAction: ASSERTSL_DEASSERTSL
         '500':
           description: Internal Server Error
           content:
@@ -218,17 +496,6 @@ paths:
                       type: boolean
                       description: Enable or disable the FastID feature.
                       example: true
-                    tidSelector:
-                      type: string
-                      description: >-
-                        Optional TID word selector mask. When provided, only the specified TID
-                        word is embedded in the inventory response.
-                      enum:
-                        - 'TID[0]'
-                        - 'TID[1]'
-                        - 'TID[2]'
-                        - 'TID[3]'
-                      example: 'TID[0]'
                   required:
                     - enabled
                 tagProtect:
@@ -318,8 +585,10 @@ paths:
                 tagQuieting:
                   type: object
                   description: >-
-                    Impinj TagQuieting selectively silences individual tags to reduce tag
-                    churn and improve read accuracy.
+                    Impinj TagQuieting configuration. Provide exactly one of basic or advanced.
+                  oneOf:
+                    - required: [basic]
+                    - required: [advanced]
                   properties:
                     basic:
                       type: object
@@ -345,11 +614,97 @@ paths:
                           items:
                             type: string
                             description: Hexadecimal EPC string of a tag.
-                            pattern: '^([0-9A-Fa-f]{24})+$'
+                            pattern: '^[0-9A-Fa-f]+$'
                             example: 'e2801191a5030069073b426d'
                       required:
                         - action
                         - tagIDs
+                    advanced:
+                      type: object
+                      description: Advanced TagQuieting using state-aware SELECT.
+                      required:
+                        - tagQuietMasks
+                        - target
+                        - stateAwareAction
+                      properties:
+                        preSelect:
+                          type: array
+                          description: Optional SELECT operations before quieting. Maximum 31 items.
+                          maxItems: 31
+                          items:
+                            type: object
+                            required: [target, action, mask]
+                            properties:
+                              target:
+                                type: string
+                                enum: [S0, S1, S2, S3, SL]
+                              action:
+                                type: string
+                                enum:
+                                  - ASSERTSL_DEASSERTSL
+                                  - ASSERTSL_NOTHING
+                                  - NOTHING_DEASSERTSL
+                                  - NEGATESL_NOTHING
+                                  - DEASSERTSL_ASSERTSL
+                                  - DEASSERTSL_NOTHING
+                                  - NOTHING_ASSERTSL
+                                  - NOTHING_NEGATESL
+                                  - INVA_INVB
+                                  - INVA_NOTHING
+                                  - NOTHING_INVB
+                                  - FLIPAB_NOTHING
+                                  - INVB_INVA
+                                  - INVB_NOTHING
+                                  - NOTHING_INVA
+                                  - NOTHING_FLIPAB
+                              mask:
+                                type: object
+                                required: [bank, pointer, length, value]
+                                properties:
+                                  bank:
+                                    type: string
+                                    enum: [EPC, TID, USER, RESERVED]
+                                  pointer:
+                                    type: integer
+                                    minimum: 0
+                                    maximum: 65535
+                                  length:
+                                    type: integer
+                                    minimum: 1
+                                    maximum: 255
+                                  value:
+                                    type: string
+                                    pattern: '^[0-9A-Fa-f]+$'
+                        tagQuietMasks:
+                          type: array
+                          minItems: 1
+                          maxItems: 3
+                          uniqueItems: true
+                          items:
+                            type: string
+                            enum: [S0A, S0B, S2A, S2B, S3A, S3B, SL_ASSERT, SL_DEASSERT]
+                        target:
+                          type: string
+                          enum: [SL, S0, S1, S2, S3]
+                        stateAwareAction:
+                          type: string
+                          enum:
+                            - ASSERTSL_DEASSERTSL
+                            - ASSERTSL_NOTHING
+                            - NOTHING_DEASSERTSL
+                            - NEGATESL_NOTHING
+                            - DEASSERTSL_ASSERTSL
+                            - DEASSERTSL_NOTHING
+                            - NOTHING_ASSERTSL
+                            - NOTHING_NEGATESL
+                            - INVA_INVB
+                            - INVA_NOTHING
+                            - NOTHING_INVB
+                            - FLIPAB_NOTHING
+                            - INVB_INVA
+                            - INVB_NOTHING
+                            - NOTHING_INVA
+                            - NOTHING_FLIPAB
             examples:
               enable_fastID:
                 value:
@@ -391,6 +746,7 @@ paths:
                   tagFocus:
                     enabled: false
               quiet_tags:
+                summary: Basic — quiet by EPC list
                 value:
                   tagQuieting:
                     basic:
@@ -399,12 +755,63 @@ paths:
                         - 'e2801191a5030069073b426d'
                         - 'e2801191a5030069073b426e'
               unquiet_tags:
+                summary: Basic — unquiet by EPC list
                 value:
                   tagQuieting:
                     basic:
                       action: unquiet
                       tagIDs:
                         - 'e2801191a5030069073b426d'
+              advanced_quiet_tags:
+                summary: Advanced — quiet with state-aware SELECT
+                value:
+                  tagQuieting:
+                    advanced:
+                      preSelect:
+                        - target: SL
+                          action: ASSERTSL_NOTHING
+                          mask:
+                            bank: EPC
+                            pointer: 32
+                            length: 96
+                            value: E280123456789012345678AB
+                        - target: S2
+                          action: INVB_INVA
+                          mask:
+                            bank: EPC
+                            pointer: 32
+                            length: 96
+                            value: E280AABBCCDDEEFF11223344
+                      tagQuietMasks:
+                        - SL_ASSERT
+                        - S2B
+                      target: SL
+                      stateAwareAction: ASSERTSL_DEASSERTSL
+              advanced_unquiet_tags:
+                summary: Advanced — unquiet with state-aware SELECT
+                value:
+                  tagQuieting:
+                    advanced:
+                      preSelect:
+                        - target: SL
+                          action: DEASSERTSL_NOTHING
+                          mask:
+                            bank: EPC
+                            pointer: 32
+                            length: 96
+                            value: E280123456789012345678AB
+                        - target: S2
+                          action: INVA_INVB
+                          mask:
+                            bank: EPC
+                            pointer: 32
+                            length: 96
+                            value: E280AABBCCDDEEFF11223344
+                      tagQuietMasks:
+                        - SL_DEASSERT
+                        - S2A
+                      target: SL
+                      stateAwareAction: DEASSERTSL_ASSERTSL
       responses:
         '200':
           description: OK

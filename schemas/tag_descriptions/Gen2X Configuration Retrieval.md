@@ -1,2 +1,1 @@
-﻿Use the configuration commands to read back the Gen2X settings that are currently stored on the reader. This lets you verify which features — such as TagProtect, FastID, TagFocus, and Tag Quieting — are active before you start the radio.
-
+﻿Use GET `/cloud/impinjGen2X` (MQTT `get_impinjGen2X`) to read the Gen2X feature last saved on the reader. The response contains exactly one of FastID, TagFocus, TagProtect, or Tag Quieting — the object from the most recent PUT. That saved object is not the same as radio state. Use `GET /cloud/status` and `impinjGen2X.isActive` to see whether the saved config is running on the current inventory session.

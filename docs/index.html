@@ -130,11 +130,17 @@ function formatInline(text) {
   if (!text) return '';
   var htmlBlocks = [];
   var htmlTokenPrefix = '@@HTML_BLOCK_';
-  var safeText = String(text).replace(/<div class="endpoint-block">[\s\S]*?<\/table><\/div>/g, function(block){
-    var token = htmlTokenPrefix + htmlBlocks.length + '@@';
-    htmlBlocks.push(sanitizeEndpointBlock(block));
-    return token;
-  });
+  var safeText = String(text)
+    .replace(/<div class="payload-section">[\s\S]*?<!-- \/payload-section -->/g, function(block){
+      var token = htmlTokenPrefix + htmlBlocks.length + '@@';
+      htmlBlocks.push(sanitizePayloadSection(block));
+      return token;
+    })
+    .replace(/<div class="endpoint-block">[\s\S]*?<\/table><\/div>/g, function(block){
+      var token = htmlTokenPrefix + htmlBlocks.length + '@@';
+      htmlBlocks.push(sanitizeEndpointBlock(block));
+      return token;
+    });
   var rendered = escHtml(safeText)
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/`([^`]+)`/g,'<code>$1</code>')
@@ -147,6 +153,22 @@ function formatInline(text) {
   return rendered.replace(/@@HTML_BLOCK_(\d+)@@/g, function(_, index){
     return htmlBlocks[Number(index)] || '';
   });
+}
+function sanitizePayloadSection(block) {
+  var template = document.createElement('template');
+  template.innerHTML = String(block);
+  var allowedTags = { DIV: true, BUTTON: true, PRE: true, CODE: true, P: true, STRONG: true };
+  Array.prototype.slice.call(template.content.querySelectorAll('*')).forEach(function(el){
+    if (!allowedTags[el.tagName]) {
+      el.replaceWith(document.createTextNode(el.textContent || ''));
+      return;
+    }
+    Array.prototype.slice.call(el.attributes).forEach(function(attr){
+      var keep = attr.name === 'class' || attr.name === 'id' || attr.name === 'data-tab' || attr.name === 'type';
+      if (!keep) el.removeAttribute(attr.name);
+    });
+  });
+  return template.innerHTML;
 }
 function sanitizeEndpointBlock(block) {
   var template = document.createElement('template');
@@ -194,6 +216,10 @@ function copyText(text, onSuccess, onFailure) {
   }
 }
 function renderMdBlock(block, options) {
+  var trimmedBlock = block.trim();
+  if (/^<div class="payload-section">/.test(trimmedBlock)) {
+    return formatInline(trimmedBlock);
+  }
   var lines = block.split('\n');
   if (lines.every(function(l){ return /^>\s?/.test(l); })) {
     return '<blockquote><p>'+lines.map(function(l){ return formatInline(l.replace(/^>\s?/,'')); }).join('<br>')+'</p></blockquote>';

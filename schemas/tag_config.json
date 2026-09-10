@@ -9,7 +9,7 @@
         "FastID": "Impinj FastID enables tags to backscatter their EPC and TID in a single inventory response, eliminating the need for separate TID read operations and improving throughput.",
         "TagFocus": "Impinj TagFocus allows readers to silence already-inventoried tags to reduce redundant reads, allowing the reader to focus on unread tags. Targets tags in session S1.",
         "Tag Quieting": "Impinj Tag Quieting allows readers to silence already-inventoried tag subpopulations, reducing tag churn and improving read accuracy in dense tag environments.",
-        "Gen2X Configuration Retrieval": "Retrieve the current Gen2X feature configuration from the reader.",
+        "Gen2X Configuration Retrieval": "Retrieve the last saved Gen2X feature from the reader.",
         "Control Commands": "Start and stop the radio while applying Gen2X configuration."
     },
     "operation_order": {

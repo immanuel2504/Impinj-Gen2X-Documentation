@@ -1,6 +1,6 @@
 {
     "title": "get_gen2x_config",
-    "description": "Retrieves the current Gen2X configuration from the reader. Returns an empty object if no Gen2X configuration has been set yet.",
+    "description": "Retrieves the last saved Gen2X feature from the reader. After any successful PUT, exactly one feature object is returned. If Gen2X has never been configured, MQTT payload is {} and REST GET returns an empty body.",
     "x-tag": "Gen2X Configuration Retrieval",
     "type": "object",
     "required": [

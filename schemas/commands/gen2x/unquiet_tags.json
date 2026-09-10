@@ -86,26 +86,24 @@
                                             },
                                             "action": {
                                                 "type": "string",
-                                                "description": "Action to perform on the target session or flag.",
+                                                "description": "Action to perform on the target. For target SL, provide an SL action using ASSERTSL, DEASSERTSL, or NEGATESL. For targets S0, S1, S2, or S3, provide a session action using INVA, INVB, or FLIPAB.",
                                                 "enum": [
-                                                    "ASSERTSL_NOTHING",
-                                                    "DEASSERTSL_NOTHING",
-                                                    "ASSERTSL_ASSERTSL",
                                                     "ASSERTSL_DEASSERTSL",
-                                                    "DEASSERTSL_ASSERTSL",
-                                                    "DEASSERTSL_DEASSERTSL",
-                                                    "NEGSL_NOTHING",
-                                                    "NOTHING_ASSERTSL",
+                                                    "ASSERTSL_NOTHING",
                                                     "NOTHING_DEASSERTSL",
-                                                    "NOTHING_NEGSL",
-                                                    "INVA_NOTHING",
-                                                    "INVB_NOTHING",
+                                                    "NEGATESL_NOTHING",
+                                                    "DEASSERTSL_ASSERTSL",
+                                                    "DEASSERTSL_NOTHING",
+                                                    "NOTHING_ASSERTSL",
+                                                    "NOTHING_NEGATESL",
                                                     "INVA_INVB",
+                                                    "INVA_NOTHING",
+                                                    "NOTHING_INVB",
+                                                    "FLIPAB_NOTHING",
                                                     "INVB_INVA",
-                                                    "INVA_INVA",
-                                                    "INVB_INVB",
+                                                    "INVB_NOTHING",
                                                     "NOTHING_INVA",
-                                                    "NOTHING_INVB"
+                                                    "NOTHING_FLIPAB"
                                                 ]
                                             },
                                             "mask": {
@@ -152,7 +150,7 @@
                                 },
                                 "tagQuietMasks": {
                                     "type": "array",
-                                    "description": "Session-state combinations to check in TID memory. Minimum 1, maximum 3 items. No duplicate session prefixes allowed (e.g., S0A and S0B together).",
+                                    "description": "Session-state combinations to check. Minimum 1, maximum 3 items. No duplicate session prefixes allowed (e.g., S0A and S0B together).",
                                     "minItems": 1,
                                     "maxItems": 3,
                                     "uniqueItems": true,
@@ -183,30 +181,42 @@
                                 },
                                 "stateAwareAction": {
                                     "type": "string",
-                                    "description": "Action to perform on target flag when tags match the tagQuietMasks pattern.",
+                                    "description": "Action to perform when tags match the tagQuietMasks pattern. For target SL, provide an SL action using ASSERTSL, DEASSERTSL, or NEGATESL. For targets S0, S1, S2, or S3, provide a session action using INVA, INVB, or FLIPAB.",
                                     "enum": [
-                                        "ASSERTSL",
-                                        "DEASSERTSL",
                                         "ASSERTSL_DEASSERTSL",
+                                        "ASSERTSL_NOTHING",
+                                        "NOTHING_DEASSERTSL",
+                                        "NEGATESL_NOTHING",
                                         "DEASSERTSL_ASSERTSL",
-                                        "NEGSL",
-                                        "NOT_DEASSERTSL",
-                                        "NOT_ASSERTSL",
-                                        "NOT_NEGSL",
-                                        "INV_A",
-                                        "INV_B",
-                                        "INV_A_NOT_INV_B",
-                                        "INV_B_NOT_INV_A",
-                                        "INV_A2BB2A",
-                                        "NOT_INV_B",
-                                        "NOT_INV_A",
-                                        "NOT_INV_A2BB2A"
+                                        "DEASSERTSL_NOTHING",
+                                        "NOTHING_ASSERTSL",
+                                        "NOTHING_NEGATESL",
+                                        "INVA_INVB",
+                                        "INVA_NOTHING",
+                                        "NOTHING_INVB",
+                                        "FLIPAB_NOTHING",
+                                        "INVB_INVA",
+                                        "INVB_NOTHING",
+                                        "NOTHING_INVA",
+                                        "NOTHING_FLIPAB"
                                     ]
                                 }
                             }
                         }
                     },
-                    "description": "Tag quieting configuration. Provide exactly one of basic or advanced."
+                    "description": "Tag quieting configuration. Provide exactly one of basic or advanced.",
+                    "oneOf": [
+                        {
+                            "required": [
+                                "basic"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "advanced"
+                            ]
+                        }
+                    ]
                 }
             },
             "description": "Command payload containing the feature configuration"
@@ -233,7 +243,7 @@
         },
         {
             "command": "set_impinjGen2X",
-            "command_id": "gen2x-advanced-unquiet-001",
+            "command_id": "7a2b3c40-5d6e-4f70-8901-23456789abcd",
             "payload": {
                 "tagQuieting": {
                     "advanced": {
