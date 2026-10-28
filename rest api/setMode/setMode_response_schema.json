@@ -1,0 +1,7 @@
+{
+  "title": "Set Radio Performance Success Response",
+  "description": "No response body on success.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}

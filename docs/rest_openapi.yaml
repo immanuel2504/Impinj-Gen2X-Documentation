@@ -4,7 +4,7 @@ info:
   description: |-
     # Overview
 
-    Use these REST APIs to configure and control Impinj Gen2X features on an FXR90 reader.
+    Use these REST APIs to configure and control Impinj Gen2X features on Zebra fixed RFID readers.
 
     This guide covers:
     - Tag Protection: Lock individual tags with a password so they are invisible to unauthorized readers.

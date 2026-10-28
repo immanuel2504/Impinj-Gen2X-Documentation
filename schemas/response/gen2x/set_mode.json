@@ -1,0 +1,53 @@
+{
+    "title": "set_mode_response",
+    "description": "MQTT response for the set_mode command. REST PUT /cloud/mode returns an empty string on success.",
+    "type": "object",
+    "required": [
+        "command",
+        "command_id",
+        "payload",
+        "response"
+    ],
+    "properties": {
+        "command": {
+            "type": "string",
+            "const": "set_mode",
+            "description": "MQTT command name that was executed"
+        },
+        "command_id": {
+            "type": "string",
+            "description": "Unique identifier correlating this response to the original request"
+        },
+        "payload": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "enum": [1, 2, 3, 6, 7],
+                    "description": "Reader error code returned on failure"
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Error description returned on failure"
+                }
+            },
+            "description": "Empty on success; contains code and message on failure"
+        },
+        "response": {
+            "type": "string",
+            "enum": [
+                "success",
+                "failure"
+            ],
+            "description": "Response status indicating success or failure"
+        }
+    },
+    "examples": [
+        {
+            "command": "set_mode",
+            "command_id": "7d4f76a1-12c8-4f0a-965e-b3c5b268cf21",
+            "payload": {},
+            "response": "success"
+        }
+    ]
+}

@@ -204,19 +204,7 @@
                             }
                         }
                     },
-                    "description": "Tag quieting configuration. Provide exactly one of basic or advanced.",
-                    "oneOf": [
-                        {
-                            "required": [
-                                "basic"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "advanced"
-                            ]
-                        }
-                    ]
+                    "description": "Tag quieting configuration. Provide exactly one of basic or advanced."
                 }
             },
             "description": "Command payload containing the feature configuration"

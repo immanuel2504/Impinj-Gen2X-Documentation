@@ -259,19 +259,7 @@
                             }
                         }
                     },
-                    "description": "Tag quieting configuration. Provide exactly one of basic or advanced.",
-                    "oneOf": [
-                        {
-                            "required": [
-                                "basic"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "advanced"
-                            ]
-                        }
-                    ]
+                    "description": "Tag quieting configuration. Provide exactly one of basic or advanced."
                 }
             },
             "maxProperties": 1

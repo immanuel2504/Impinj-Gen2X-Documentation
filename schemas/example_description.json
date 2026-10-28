@@ -41,5 +41,8 @@
     },
     "start": {
         "Tested example": "Start radio with Gen2X features applied"
+    },
+    "set_mode": {
+        "Tested example": "Inventory only Gen2X-capable tags"
     }
 }

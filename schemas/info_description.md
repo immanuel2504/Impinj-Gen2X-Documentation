@@ -1,4 +1,20 @@
-﻿Use this guide to enable, configure, and manage Impinj Gen2X features on Zebra fixed RFID readers using both MQTT and REST APIs. These features are currently supported on the **FXR90** with Firmware 4.0.8 and above, with additional fixed reader support coming soon.
+﻿Use this guide to enable, configure, and manage Impinj Gen2X features on Zebra fixed RFID readers using both MQTT and REST APIs. The same APIs are supported on **FXR Fixed Readers**, **FX9600**, **FX7500**, and **ATR7000** readers running firmware that includes Gen2X support.
+
+## Supported Readers
+
+Impinj Gen2X is supported on FXR Fixed Readers, FX9600, FX7500 ASIC, legacy FX7500, and ATR7000. FastID, TagFocus, and Tag Quieting are available across these readers.
+
+Protected Mode and Radio Performance have the following reader-specific considerations:
+
+### ATR7000
+
+- **Protected Mode:** Not available because protected-tag operations require a shorter tag-access range than the typical ATR7000 operating distance.
+- **Radio Performance:** Not available due to differences in the reader's radio architecture and inventory processing.
+- **Portal Directionality:** Gen2X features are not applied when Portal Directionality is enabled because it uses a separate directionality inventory workflow.
+
+### Legacy FX7500
+
+Protected Mode and Radio Performance are not available on legacy hardware.
 
 ## Overview
 
@@ -7,7 +23,8 @@ This reference explains how to use Gen2X operations across MQTT and REST for:
 - **Protected Mode**: Lock individual tags with a password so they are invisible to unauthorized readers. 
 - **FastID**: Return the EPC and TID in a single inventory response. 
 - **TagFocus**: Reduce repeated reports from already-read tags so the reader prioritizes new tags. 
-- **Tag Quieting**: Quiet specific tags by EPC ID through reader-level configuration. 
+- **Tag Quieting**: Quiet specific tags by EPC ID through reader-level configuration.
+- **Gen2X Radio Performance**: Select `GEN2`, `GEN2X`, or `HYBRID` inventory behavior through the reader operating mode.
 
 Impinj Gen2X extends Gen2 radio and logical layers. Tags must support Gen2X to use these features. For tag compatibility, refer to [Impinj Gen2X specifications](http://www.impinj.com/Gen2X).
 
@@ -30,7 +47,7 @@ Use either interface based on your deployment and integration architecture.
 
 ### Authentication
 
-1. Send `PUT /cloud/localRestLogin`.
+1. Send `GET /cloud/localRestLogin`.
 2. Extract the access token from the login response.
 3. Add the token to all protected requests.
 
@@ -256,11 +273,12 @@ The tag is ready for Protected Mode. Use the same value in `tagProtect.password`
 
 ## Feature Scope and Behavior
 
-Gen2X supports four features:
+This guide covers four features configured through `set_impinjGen2X`, plus Radio Performance configured separately through `set_mode`:
 - **Protected Mode** (tag-scoped)
 - **TagFocus** (reader-scoped)
 - **FastID** (reader-scoped)
 - **Tag Quieting** (reader-scoped)
+- **Radio Performance** (operating-mode setting)
 
 ### Feature Scope
 
@@ -268,9 +286,11 @@ Gen2X supports four features:
 
 - **Reader-Scoped** - FastID, TagFocus, and Tag Quieting apply at the reader level. These features are mutually exclusive, so only one reader-scoped feature can be active at a time. Enabling a different reader-scoped feature replaces the currently active one for subsequent inventory operations.
 
+- **Operating-Mode Setting** - Radio Performance is selected with `inventoryProtocol.mode` through `set_mode` or `PUT /cloud/mode`. It is separate from the configuration saved through `set_impinjGen2X`.
+
 ### Feature Persistence
 
-The reader retains the last configured Gen2X feature and automatically restores it upon start with `applyImpinjGen2X: true`. This behavior is maintained across the following scenarios:
+The reader retains the last feature configured through `set_impinjGen2X` and restores it when inventory starts with `applyImpinjGen2X: true`. Radio Performance is part of the operating mode and is not controlled by `applyImpinjGen2X`. Feature persistence is maintained across the following scenarios:
 
 - Stopping and restarting the reader
 - Disconnecting and reconnecting MQTT

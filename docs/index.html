@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <title>Impinj Gen2X API Reference</title>
 <link href="https://fonts.googleapis.com/css?family=Inter:400,600,700,900&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/custom-api.css?v=20260622-7" />
+<link rel="stylesheet" href="css/custom-api.css?v=20260622-8" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
@@ -371,6 +371,20 @@ function getSchemaEnumLine(schema) {
   return '<div class="schema-allowed"><span class="schema-allowed-label">Allowed:</span><div class="schema-allowed-values">'+
     values.map(function(v){ return '<span class="schema-enum-chip">'+escHtml(String(v))+'</span>'; }).join('')+'</div></div>';
 }
+function isDisplayableCompositionSchema(schema) {
+  if (!schema || typeof schema !== 'object') return false;
+  return !!(
+    schema.title ||
+    schema.description ||
+    schema.type ||
+    (schema.properties && Object.keys(schema.properties).length) ||
+    schema.items ||
+    (schema.enum && schema.enum.length) ||
+    ['allOf','anyOf','oneOf'].some(function(kw){
+      return Array.isArray(schema[kw]) && schema[kw].some(isDisplayableCompositionSchema);
+    })
+  );
+}
 function buildSchemaNodeRows(name, schema, depth, parentUid, isRequired) {
   if (!schema) return '';
   var rows = '';
@@ -381,9 +395,9 @@ function buildSchemaNodeRows(name, schema, depth, parentUid, isRequired) {
   var hasChildren = !!(
     (schema.properties && Object.keys(schema.properties).length) ||
     schema.items ||
-    (schema.oneOf && schema.oneOf.length) ||
-    (schema.anyOf && schema.anyOf.length) ||
-    (schema.allOf && schema.allOf.length)
+    (schema.oneOf && schema.oneOf.some(isDisplayableCompositionSchema)) ||
+    (schema.anyOf && schema.anyOf.some(isDisplayableCompositionSchema)) ||
+    (schema.allOf && schema.allOf.some(isDisplayableCompositionSchema))
   );
   var nodeId = hasChildren ? 'sn-'+(++schemaNodeUid) : '';
   var indentClass = 'schema-indent-'+Math.min(depth,5);
@@ -415,7 +429,10 @@ function buildSchemaNodeRows(name, schema, depth, parentUid, isRequired) {
   }
   ['allOf','anyOf','oneOf'].forEach(function(kw){
     if (!Array.isArray(schema[kw])) return;
-    schema[kw].forEach(function(child,i){ rows += buildSchemaNodeRows(kw+' '+(i+1), child, depth+1, nodeId, false); });
+    schema[kw].forEach(function(child,i){
+      if (!isDisplayableCompositionSchema(child)) return;
+      rows += buildSchemaNodeRows(kw+' '+(i+1), child, depth+1, nodeId, false);
+    });
   });
   return rows;
 }
@@ -784,6 +801,7 @@ var REST_ARTIFACTS = {
   'Quiet Tags':                             'quietTags',
   'Unquiet Tags':                           'unquietTags',
   'Get Gen2X Config':                       'getGen2xConfig',
+  'Set Radio Performance':                  'setMode',
   'Start':                                  'start',
   'Stop':                                   'stop'
 };

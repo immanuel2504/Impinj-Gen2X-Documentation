@@ -1,0 +1,10 @@
+{
+  "type": "CUSTOM",
+  "antennas": [
+    1
+  ],
+  "transmitPower": 30,
+  "inventoryProtocol": {
+    "mode": "GEN2X"
+  }
+}

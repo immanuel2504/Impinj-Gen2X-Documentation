@@ -1,0 +1,700 @@
+{
+  "title": "Set Radio Performance Request",
+  "description": "Complete operating-mode configuration. The request replaces the current mode instead of merging fields.",
+  "type": "object",
+  "required": [
+    "type"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "SIMPLE",
+        "INVENTORY",
+        "PORTAL",
+        "CONVEYOR",
+        "CUSTOM"
+      ],
+      "default": "SIMPLE",
+      "description": "Operating-mode type."
+    },
+    "modeSpecificSettings": {
+      "description": "Settings used by INVENTORY or PORTAL mode.",
+      "oneOf": [
+        {
+          "title": "Inventory settings",
+          "type": "object",
+          "properties": {
+            "interval": {
+              "type": "object",
+              "description": "How often each tag is reported.",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "seconds",
+                    "minutes",
+                    "hours",
+                    "days"
+                  ]
+                },
+                "value": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "Portal settings",
+          "type": "object",
+          "properties": {
+            "startTrigger": {
+              "type": "object",
+              "description": "GPI trigger that starts portal reads.",
+              "properties": {
+                "port": {
+                  "type": "integer"
+                },
+                "signal": {
+                  "type": "string",
+                  "enum": [
+                    "HIGH",
+                    "LOW"
+                  ]
+                }
+              }
+            },
+            "stopInterval": {
+              "type": "integer",
+              "description": "Seconds to continue reading after the last unique tag is read."
+            }
+          }
+        }
+      ]
+    },
+    "environment": {
+      "type": "string",
+      "enum": [
+        "LOW_INTERFERENCE",
+        "HIGH_INTERFERENCE",
+        "VERY_HIGH_INTERFERENCE",
+        "AUTO_DETECT",
+        "DEMO"
+      ],
+      "default": "HIGH_INTERFERENCE",
+      "description": "RF environment profile."
+    },
+    "antennas": {
+      "type": "array",
+      "description": "Antenna ports used for inventory. If omitted, all ports are used.",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "filter": {
+      "type": "object",
+      "description": "Includes or excludes tags by EPC prefix, suffix, or regular expression. A prefix filter cannot be used with query or selects.",
+      "required": [
+        "value",
+        "match",
+        "operation"
+      ],
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "Value to match. Prefix and suffix values must contain an even number of hexadecimal characters."
+        },
+        "match": {
+          "type": "string",
+          "enum": [
+            "prefix",
+            "suffix",
+            "regex"
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "include",
+            "exclude"
+          ],
+          "default": "include"
+        }
+      }
+    },
+    "inventoryProtocol": {
+      "type": "object",
+      "description": "Radio Performance inventory protocol settings.",
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "GEN2",
+            "GEN2X",
+            "HYBRID"
+          ],
+          "description": "Inventory protocol used to communicate with tags."
+        }
+      }
+    },
+    "transmitPower": {
+      "description": "Transmit power in dBm. A single value applies to all antennas; an array supplies one value per antenna.",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30
+          }
+        }
+      ]
+    },
+    "antennaStopCondition": {
+      "description": "Stop condition applied to all antennas, or one condition per antenna.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "DURATION",
+                "INVENTORY_COUNT",
+                "GPI",
+                "SINGLE_INVENTORY_LIMITED_DURATION"
+              ]
+            },
+            "value": {
+              "description": "Numeric limit, or a GPI trigger when type is GPI.",
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "port",
+                    "signal"
+                  ],
+                  "properties": {
+                    "port": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "signal": {
+                      "type": "string",
+                      "enum": [
+                        "HIGH",
+                        "LOW"
+                      ]
+                    },
+                    "debounceTime": {
+                      "type": "integer",
+                      "default": 0
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "value"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "DURATION",
+                  "INVENTORY_COUNT",
+                  "GPI",
+                  "SINGLE_INVENTORY_LIMITED_DURATION"
+                ]
+              },
+              "value": {
+                "description": "Numeric limit or GPI trigger configuration."
+              }
+            }
+          }
+        }
+      ]
+    },
+    "query": {
+      "description": "Gen2 query parameters applied to all antennas, or one query object per antenna.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "tagPopulation": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "sel": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "SL",
+                "NOT_SL"
+              ]
+            },
+            "session": {
+              "type": "string",
+              "enum": [
+                "S0",
+                "S1",
+                "S2",
+                "S3"
+              ]
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "A",
+                "B",
+                "AB"
+              ]
+            }
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tagPopulation": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sel": {
+                "type": "string",
+                "enum": [
+                  "ALL",
+                  "SL",
+                  "NOT_SL"
+                ]
+              },
+              "session": {
+                "type": "string",
+                "enum": [
+                  "S0",
+                  "S1",
+                  "S2",
+                  "S3"
+                ]
+              },
+              "target": {
+                "type": "string",
+                "enum": [
+                  "A",
+                  "B",
+                  "AB"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "selects": {
+      "type": "array",
+      "description": "Gen2 SELECT operations for all antennas, or a nested array containing one SELECT list per antenna.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "target",
+              "action",
+              "membank",
+              "pointer",
+              "length",
+              "mask"
+            ],
+            "properties": {
+              "target": {
+                "type": "string",
+                "enum": [
+                  "SL",
+                  "S0",
+                  "S1",
+                  "S2",
+                  "S3"
+                ]
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "ASSERTSL_DEASSERTSL",
+                  "ASSERTSL_NOTHING",
+                  "NOTHING_DEASSERTSL",
+                  "NEGATESL_NOTHING",
+                  "DEASSERTSL_ASSERTSL",
+                  "DEASSERTSL_NOTHING",
+                  "NOTHING_ASSERTSL",
+                  "NOTHING_NEGATESL",
+                  "INVA_INVB",
+                  "INVA_NOTHING",
+                  "NOTHING_INVB",
+                  "FLIPAB_NOTHING",
+                  "INVB_INVA",
+                  "INVB_NOTHING",
+                  "NOTHING_INVA",
+                  "NOTHING_FLIPAB"
+                ]
+              },
+              "membank": {
+                "type": "string",
+                "enum": [
+                  "EPC",
+                  "TID",
+                  "USER",
+                  "RES"
+                ]
+              },
+              "pointer": {
+                "type": "integer"
+              },
+              "length": {
+                "type": "integer"
+              },
+              "mask": {
+                "type": "string",
+                "description": "Even-length hexadecimal mask."
+              },
+              "truncate": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          },
+          {
+            "type": "array",
+            "description": "SELECT operations for one antenna.",
+            "items": {
+              "type": "object",
+              "description": "Gen2 SELECT operation."
+            }
+          }
+        ]
+      }
+    },
+    "delayAfterSelects": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65,
+      "description": "Milliseconds to wait after the final SELECT before issuing a query."
+    },
+    "accesses": {
+      "type": "array",
+      "description": "Gen2 access operations for all antennas, or a nested array containing one access list per antenna. Not supported in INVENTORY mode or with reportFilter.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "READ",
+                  "WRITE",
+                  "ACCESS",
+                  "LOCK",
+                  "KILL"
+                ]
+              },
+              "config": {
+                "type": "object",
+                "description": "Fields depend on the access type.",
+                "properties": {
+                  "membank": {
+                    "type": "string",
+                    "enum": [
+                      "EPC",
+                      "TID",
+                      "USER",
+                      "RESERVED"
+                    ]
+                  },
+                  "wordPointer": {
+                    "type": "integer"
+                  },
+                  "wordCount": {
+                    "type": "integer"
+                  },
+                  "data": {
+                    "type": "string",
+                    "description": "Hexadecimal words to write."
+                  },
+                  "blockSize": {
+                    "type": "integer"
+                  },
+                  "password": {
+                    "type": "string",
+                    "pattern": "^[0-9A-Fa-f]{8}$"
+                  },
+                  "actions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "PERMALOCK_USER_BANK",
+                        "WRITE_LOCK_USER_BANK",
+                        "WRITE_UNLOCK_USER_BANK",
+                        "WRITE_LOCK_TID_BANK",
+                        "WRITE_UNLOCK_TID_BANK",
+                        "PERMALOCK_EPC_BANK",
+                        "WRITE_LOCK_EPC_BANK",
+                        "PERMALOCK_ACCESS_PASSWORD",
+                        "READ_WRITE_LOCK_ACCESS_PASSWORD",
+                        "READ_WRITE_UNLOCK_ACCESS_PASSWORD",
+                        "PERMALOCK_KILL_PASSWORD",
+                        "READ_WRITE_LOCK_KILL_PASSWORD",
+                        "READ_WRITE_UNLOCK_KILL_PASSWORD"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "array",
+            "description": "Access operations for one antenna.",
+            "items": {
+              "type": "object",
+              "description": "READ, WRITE, ACCESS, LOCK, or KILL operation."
+            }
+          }
+        ]
+      }
+    },
+    "delayBetweenAntennaCycles": {
+      "type": "object",
+      "required": [
+        "type",
+        "duration"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "DISABLED",
+            "NO_TAGS",
+            "NO_UNIQUE_TAGS"
+          ]
+        },
+        "duration": {
+          "type": "integer",
+          "description": "Delay in milliseconds."
+        }
+      }
+    },
+    "tagMetaData": {
+      "type": "array",
+      "description": "Additional values included in tag reports.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "RSSI",
+              "PHASE",
+              "SEEN_COUNT",
+              "ANTENNA",
+              "CHANNEL",
+              "PC",
+              "XPC",
+              "CRC",
+              "EPC",
+              "TID",
+              "USER",
+              "MAC",
+              "HOSTNAME",
+              "READERLOCATION"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "userDefined": {
+                "type": "string"
+              },
+              "antennaNames": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "gpsCoordinates": {
+                "type": "object",
+                "properties": {
+                  "latitude": {
+                    "type": "number",
+                    "nullable": true
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "radioStartConditions": {
+      "type": "object",
+      "description": "Controls when inventory begins after a start command. Not supported in PORTAL mode.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "GPI",
+            "GPI_WITH_RESTART"
+          ]
+        },
+        "gpis": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "port",
+              "signal"
+            ],
+            "properties": {
+              "port": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "signal": {
+                "type": "string",
+                "enum": [
+                  "HIGH",
+                  "LOW"
+                ]
+              },
+              "debounceTime": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "radioStopConditions": {
+      "type": "object",
+      "description": "Controls when an ongoing inventory operation stops. Not supported in PORTAL mode.",
+      "properties": {
+        "duration": {
+          "type": "integer",
+          "description": "Run duration in seconds."
+        },
+        "antennaCycles": {
+          "type": "integer"
+        },
+        "tagCount": {
+          "type": "integer"
+        },
+        "durationAfterNoMoreUniqueTags": {
+          "type": "integer",
+          "description": "Seconds without a new unique tag before stopping."
+        },
+        "gpis": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "port",
+              "signal"
+            ],
+            "properties": {
+              "port": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "signal": {
+                "type": "string",
+                "enum": [
+                  "HIGH",
+                  "LOW"
+                ]
+              },
+              "debounceTime": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "reportFilter": {
+      "type": "object",
+      "description": "Controls how frequently a tag is reported. Cannot be used in INVENTORY mode or with accesses.",
+      "required": [
+        "duration",
+        "type"
+      ],
+      "properties": {
+        "duration": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seconds before the same tag can be reported again."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "RADIO_WIDE",
+            "PER_ANTENNA"
+          ]
+        },
+        "addl_keys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "TID"
+            ]
+          }
+        }
+      }
+    },
+    "rssiFilter": {
+      "type": "object",
+      "description": "Ignores tag responses below the configured RSSI threshold.",
+      "properties": {
+        "threshold": {
+          "type": "integer",
+          "minimum": -128,
+          "maximum": -20,
+          "description": "RSSI threshold in dBm."
+        }
+      }
+    }
+  }
+}
