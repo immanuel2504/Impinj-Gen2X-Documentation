@@ -1,5 +1,15 @@
 ﻿Use this guide to enable, configure, and manage Impinj Gen2X features on Zebra fixed RFID readers using both MQTT and REST APIs. The same APIs are supported on **FXR Fixed Readers**, **FX9600**, **FX7500**, and **ATR7000** readers running firmware that includes Gen2X support.
 
+## Overview
+
+This reference explains how to configure and use the following Gen2X capabilities through MQTT and REST APIs:
+
+- **Protected Mode:** Protect individual tags using authenticated access so they are not visible to unauthorized readers.
+- **FastID:** Return the EPC and TID as part of the same inventory response.
+- **TagFocus:** Reduce repeated reporting of previously inventoried tags so the reader can prioritize new tags.
+- **Tag Quieting:** Quiet selected tags based on EPC ID through reader-level configuration.
+- **Gen2X Radio Performance Features:** Configure supported Gen2X radio-level features (`GEN2`, `GEN2X`, or `HYBRID`) to optimize tag inventory performance.
+
 ## Supported Readers
 
 Impinj Gen2X is supported on FXR Fixed Readers, FX9600, FX7500 ASIC, legacy FX7500, and ATR7000. FastID, TagFocus, and Tag Quieting are available across these readers.
@@ -15,18 +25,6 @@ Protected Mode and Radio Performance have the following reader-specific consider
 ### Legacy FX7500
 
 Protected Mode and Radio Performance are not available on legacy hardware.
-
-## Overview
-
-This reference explains how to use Gen2X operations across MQTT and REST for:
-
-- **Protected Mode**: Lock individual tags with a password so they are invisible to unauthorized readers. 
-- **FastID**: Return the EPC and TID in a single inventory response. 
-- **TagFocus**: Reduce repeated reports from already-read tags so the reader prioritizes new tags. 
-- **Tag Quieting**: Quiet specific tags by EPC ID through reader-level configuration.
-- **Gen2X Radio Performance**: Select `GEN2`, `GEN2X`, or `HYBRID` inventory behavior through the reader operating mode.
-
-Impinj Gen2X extends Gen2 radio and logical layers. Tags must support Gen2X to use these features. For tag compatibility, refer to [Impinj Gen2X specifications](http://www.impinj.com/Gen2X).
 
 ## Protocols
 
